@@ -49,9 +49,14 @@ Hecho:
   - `src/lib/reaper.js`: revalidación pre-kill (PID vivo + startedAtMs
     idéntico, para no matar un PID reciclado) y escalada
     SIGTERM→espera→SIGKILL. `control` abstrae el contacto con el SO.
-  - `src/lib/whitelist.js`: lista blanca (regla no negociable). Array en
-    código por ahora (vacío por defecto), `isWhitelisted` con patrones
-    inyectables; el fichero de config vendrá después.
+  - `src/lib/whitelist.js`: lista blanca (regla no negociable). Los
+    patrones se cargan de `~/.mzg/config.json` (campo `whitelist`: array
+    de strings) vía `loadWhitelist()`. Ante cualquier problema (fichero
+    ausente, ilegible, JSON corrupto, campo mal formado) devuelve lista
+    vacía; el fichero ausente es silencioso (caso normal), el resto avisa
+    por stderr. `isWhitelisted` y la inyección de patrones intactos. El
+    CLI carga el config solo en el camino real; en `--demo` la whitelist
+    va vacía a propósito (determinismo e independencia del config real).
   - `src/lib/logger.js`: log de auditoría JSONL en `~/.mzg/clean.log`
     (solo se crea al matar de verdad, no en dry-run). Logger en memoria
     para tests y `--demo`.
@@ -79,10 +84,10 @@ estado entre ejecuciones (ej. `~/.mzg/state.json` con primer-visto por
 PID).
 
 Falta:
-- Fichero de configuración para la lista blanca (hoy es un array en
-  código, vacío por defecto). La función `isWhitelisted` ya acepta
-  patrones inyectables, así que cargarlos de `~/.mzg/config` no debería
-  tocar a quien la usa. No hay flag CLI para pasar patrones todavía.
+- No hay flag CLI ni comando para editar/inspeccionar la whitelist; se
+  edita `~/.mzg/config.json` a mano. Tampoco hay validación de que cada
+  patrón compile como regex: un patrón inválido (ej. `"node("`) haría
+  throw en `isWhitelisted` durante `clean`. Conviene validar al cargar.
 - Soporte multi-máquina/equipo (el diferenciador vs. zclean) — sin
   diseñar aún.
 - Revalidación por-PID más barata: hoy `clean` re-pide el snapshot

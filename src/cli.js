@@ -61,7 +61,8 @@ async function main(argv) {
       // Mundo simulado: control que NUNCA llama a process.kill real y
       // logger en memoria, para no tocar procesos ni escribir en ~/.mzg.
       // El PID 8500 (Cursor) ignora SIGTERM a proposito, para que se vea
-      // la escalada a SIGKILL.
+      // la escalada a SIGKILL. Whitelist vacia a proposito: la demo debe
+      // ser determinista e independiente del config real del usuario.
       const { createDemoWorld } = await import('./lib/demoWorld.js');
       const { createMemoryLogger } = await import('./lib/logger.js');
       const world = createDemoWorld({ stubbornPids: [8500] });
@@ -69,6 +70,11 @@ async function main(argv) {
       options.control = world.control;
       options.logger = createMemoryLogger();
       console.error('[DEMO] Datos simulados; NO se toca ningun proceso real.\n');
+    } else {
+      // Camino real: la lista blanca sale de ~/.mzg/config.json (o vacia
+      // si no existe / esta corrupto; loadWhitelist ya avisa por stderr).
+      const { loadWhitelist } = await import('./lib/whitelist.js');
+      options.whitelist = loadWhitelist();
     }
 
     const outcome = await clean(options);
