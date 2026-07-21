@@ -91,3 +91,44 @@ test('campo whitelist mal formado (no es array de strings): lista vacia y aviso'
     assert.match(warnings[0], /array de strings/i);
   });
 });
+
+test('patron invalido entre validos: sobreviven los validos, se descarta el roto', () => {
+  withTempDir((dir) => {
+    const path = join(dir, 'config.json');
+    // "node(" es una regex invalida (parentesis sin cerrar).
+    writeFileSync(path, JSON.stringify({ whitelist: ['aider', 'node(', 'cursor'] }));
+
+    const { warn, warnings } = captureWarns();
+    const result = loadWhitelist(path, { warn });
+
+    assert.deepEqual(result, ['aider', 'cursor'], 'un patron roto no debe tumbar a los demas');
+    assert.equal(warnings.length, 1);
+    assert.match(warnings[0], /"node\("/);
+    assert.match(warnings[0], /regex valida/i);
+  });
+});
+
+test('todos los patrones invalidos: lista vacia y un aviso por cada uno', () => {
+  withTempDir((dir) => {
+    const path = join(dir, 'config.json');
+    writeFileSync(path, JSON.stringify({ whitelist: ['node(', '[unclosed', '*bad'] }));
+
+    const { warn, warnings } = captureWarns();
+    const result = loadWhitelist(path, { warn });
+
+    assert.deepEqual(result, []);
+    assert.equal(warnings.length, 3, 'un aviso por cada patron descartado');
+    assert.ok(warnings.every((w) => /regex valida/i.test(w)));
+  });
+});
+
+test('un patron valido sobrevive y sigue funcionando con isWhitelisted', () => {
+  withTempDir((dir) => {
+    const path = join(dir, 'config.json');
+    writeFileSync(path, JSON.stringify({ whitelist: ['node(', 'aider'] }));
+
+    const patterns = loadWhitelist(path, { warn: () => {} });
+    assert.deepEqual(patterns, ['aider']);
+    assert.equal(isWhitelisted({ name: 'python3', cmd: 'python3 -m aider.main' }, patterns), true);
+  });
+});

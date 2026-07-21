@@ -57,6 +57,9 @@ Hecho:
     por stderr. `isWhitelisted` y la inyección de patrones intactos. El
     CLI carga el config solo en el camino real; en `--demo` la whitelist
     va vacía a propósito (determinismo e independencia del config real).
+    Cada patrón se valida como regex al cargar: uno que no compile (ej.
+    `"node("`) se descarta con aviso por stderr y los demás siguen
+    activos — un patrón roto no tumba toda la whitelist.
   - `src/lib/logger.js`: log de auditoría JSONL en `~/.mzg/clean.log`
     (solo se crea al matar de verdad, no en dry-run). Logger en memoria
     para tests y `--demo`.
@@ -85,9 +88,7 @@ PID).
 
 Falta:
 - No hay flag CLI ni comando para editar/inspeccionar la whitelist; se
-  edita `~/.mzg/config.json` a mano. Tampoco hay validación de que cada
-  patrón compile como regex: un patrón inválido (ej. `"node("`) haría
-  throw en `isWhitelisted` durante `clean`. Conviene validar al cargar.
+  edita `~/.mzg/config.json` a mano.
 - Soporte multi-máquina/equipo (el diferenciador vs. zclean) — sin
   diseñar aún.
 - Revalidación por-PID más barata: hoy `clean` re-pide el snapshot

@@ -69,7 +69,27 @@ export function loadWhitelist(
     );
     return [];
   }
-  return list;
+
+  // Cada patron se usa como regex (ver toRegExp/isWhitelisted). Un patron
+  // que no compile (ej. "node(") haria throw mas tarde, dentro de clean,
+  // justo en el momento de decidir a quien matar. Lo validamos aqui, al
+  // cargar, y descartamos SOLO el patron roto (con aviso), conservando los
+  // demas: un error tipografico en una linea no debe tumbar toda la
+  // proteccion que el usuario configuro en las otras.
+  const valid = [];
+  for (const pattern of list) {
+    try {
+      // eslint-disable-next-line no-new
+      new RegExp(pattern, 'i');
+      valid.push(pattern);
+    } catch (err) {
+      warn(
+        `[mzg] Patron de whitelist ignorado por no ser una regex valida: ` +
+          `${JSON.stringify(pattern)} (${err.message}). Los demas patrones siguen activos.`,
+      );
+    }
+  }
+  return valid;
 }
 
 function toRegExp(pattern) {
