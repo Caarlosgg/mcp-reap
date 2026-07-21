@@ -72,6 +72,15 @@ Hecho:
   - 9 tests nuevos en `test/clean.test.js`: dry-run no mata, `--yes`
     mata, escalada a SIGKILL, whitelist protege, revalidación omite PID
     reciclado y proceso ya muerto, logging.
+- CLI (`src/cli.js`): `mzg --help` (y `mzg` sin args) muestra ayuda
+  completa (comandos, flags, bloque de seguridad; `--demo` sigue oculto).
+  `mzg --version`/`-v` lee la versión de `package.json` vía
+  `import.meta.url`. `mzg init` (`src/commands/init.js`) crea
+  `~/.mzg/config.json` con plantilla de whitelist vacía; nunca sobrescribe
+  uno existente. La plantilla documenta con claves `_ayuda`/`_ejemplos`
+  (JSON no admite comentarios; `loadWhitelist` ignora esas claves).
+  `configPath`/`log` inyectables para testear sin tocar `~/.mzg` real.
+  3 tests en `test/init.test.js`.
 
 Nota Windows: `process.kill(pid, 'SIGTERM')` no es una terminación suave
 real (llama a TerminateProcess como SIGKILL). La escalada se mantiene
