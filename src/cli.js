@@ -15,7 +15,18 @@ async function main(argv) {
 
   if (command === 'scan') {
     const json = rest.includes('--json');
-    const results = await scan();
+    const demo = rest.includes('--demo');
+
+    let processSource;
+    if (demo) {
+      const { buildDemoSnapshot } = await import('./lib/demoData.js');
+      processSource = () => buildDemoSnapshot();
+      // Al stderr y no al stdout: para que `--demo --json` siga
+      // produciendo stdout parseable, sin mezclar el aviso con los datos.
+      console.error('[DEMO] Datos simulados, no se escaneo el sistema real.\n');
+    }
+
+    const results = await scan({ processSource });
     printReport(results, { json });
     return;
   }

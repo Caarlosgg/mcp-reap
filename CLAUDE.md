@@ -35,6 +35,12 @@ Hecho:
   no testean los adaptadores de SO reales.
 - `npm run build` = chequeo sintáctico (`node --check`) de todo `src/`,
   ya que no hay paso de compilación real (JS nativo, cero deps).
+- `scan` acepta una fuente de procesos inyectable (`src/commands/scan.js`,
+  parámetro `processSource`), por defecto el listado real del SO. Permite
+  correr la misma lógica de detección/atribución sobre un snapshot
+  simulado (`src/lib/demoData.js`) sin duplicar código: usado por
+  `mzg scan --demo` (flag oculto, no sale en `--help`) y por
+  `test/scan.demo.test.js`.
 
 Limitación conocida (documentar antes de tocarla): la columna "tiempo
 activo" es el tiempo que el proceso lleva corriendo, NO el tiempo que

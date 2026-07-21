@@ -10,10 +10,16 @@ import { formatBytes, formatDuration, truncate } from '../lib/format.js';
  * tienen nada que ver con herramientas de IA, y listarlos todos seria
  * ruido que no cumple el proposito de esta herramienta.
  *
+ * `processSource` es inyectable (por defecto, el listado real del SO) para
+ * poder correr exactamente la misma logica de deteccion/atribucion sobre
+ * un snapshot simulado, tanto en tests como en `--demo`, sin abrir una
+ * ruta de codigo paralela que pueda desincronizarse del scan real.
+ *
+ * @param {{ processSource?: () => Promise<Array> | Array }} [options]
  * @returns {Promise<Array>}
  */
-export async function scan() {
-  const processes = await listProcesses();
+export async function scan({ processSource = listProcesses } = {}) {
+  const processes = await processSource();
   const orphans = findOrphans(processes);
   const now = Date.now();
 
