@@ -28,3 +28,21 @@ export function truncate(text, maxLength) {
   if (text.length <= maxLength) return text;
   return `${text.slice(0, maxLength - 1)}…`;
 }
+
+/**
+ * Renderiza una tabla de texto con columnas alineadas. Devuelve el string
+ * completo (no imprime) para que quien llame decida el destino.
+ * @param {string[]} headers
+ * @param {Array<Array<string | number>>} rows
+ */
+export function renderTable(headers, rows) {
+  const widths = headers.map((h, i) =>
+    Math.max(h.length, ...rows.map((row) => String(row[i]).length)),
+  );
+  const line = (cols) =>
+    cols.map((col, i) => String(col).padEnd(widths[i])).join('  ');
+
+  const out = [line(headers), line(widths.map((w) => '-'.repeat(w)))];
+  for (const row of rows) out.push(line(row));
+  return out.join('\n');
+}

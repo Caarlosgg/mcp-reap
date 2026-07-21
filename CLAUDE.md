@@ -41,6 +41,34 @@ Hecho:
   simulado (`src/lib/demoData.js`) sin duplicar código: usado por
   `mzg scan --demo` (flag oculto, no sale en `--help`) y por
   `test/scan.demo.test.js`.
+- Comando `clean` (`src/commands/clean.js`): reusa la detección de `scan`
+  y mata los huérfanos. Dry-run por defecto (`mzg clean` solo muestra);
+  solo `mzg clean --yes` mata. `--timeout=<seg>` configura la espera
+  (default 10s). Piezas con efecto todas inyectables (`processSource`,
+  `control`, `logger`) para testear sin matar nada real.
+  - `src/lib/reaper.js`: revalidación pre-kill (PID vivo + startedAtMs
+    idéntico, para no matar un PID reciclado) y escalada
+    SIGTERM→espera→SIGKILL. `control` abstrae el contacto con el SO.
+  - `src/lib/whitelist.js`: lista blanca (regla no negociable). Array en
+    código por ahora (vacío por defecto), `isWhitelisted` con patrones
+    inyectables; el fichero de config vendrá después.
+  - `src/lib/logger.js`: log de auditoría JSONL en `~/.mzg/clean.log`
+    (solo se crea al matar de verdad, no en dry-run). Logger en memoria
+    para tests y `--demo`.
+  - `src/lib/demoWorld.js`: mundo simulado para `mzg clean --demo` con
+    `control` que NUNCA llama a `process.kill` real (los PID del snapshot
+    podrían coincidir con procesos reales). PID 8500 ignora SIGTERM para
+    demostrar la escalada a SIGKILL.
+  - `src/lib/format.js` ganó `renderTable` (usado por `clean`, no toca
+    `scan.js`).
+  - 9 tests nuevos en `test/clean.test.js`: dry-run no mata, `--yes`
+    mata, escalada a SIGKILL, whitelist protege, revalidación omite PID
+    reciclado y proceso ya muerto, logging.
+
+Nota Windows: `process.kill(pid, 'SIGTERM')` no es una terminación suave
+real (llama a TerminateProcess como SIGKILL). La escalada se mantiene
+igual porque en Unix sí importa; en Windows el proceso ya habrá muerto
+tras el primer intento y la espera termina de inmediato.
 
 Limitación conocida (documentar antes de tocarla): la columna "tiempo
 activo" es el tiempo que el proceso lleva corriendo, NO el tiempo que
@@ -51,10 +79,12 @@ estado entre ejecuciones (ej. `~/.mzg/state.json` con primer-visto por
 PID).
 
 Falta:
-- Comando de limpieza (`clean`/`kill`) con dry-run, SIGTERM→SIGKILL,
-  lista blanca configurable — nada de esto existe todavía, solo se
-  escanea.
+- Fichero de configuración para la lista blanca (hoy es un array en
+  código, vacío por defecto). La función `isWhitelisted` ya acepta
+  patrones inyectables, así que cargarlos de `~/.mzg/config` no debería
+  tocar a quien la usa. No hay flag CLI para pasar patrones todavía.
 - Soporte multi-máquina/equipo (el diferenciador vs. zclean) — sin
   diseñar aún.
-- Lista blanca configurable (regla no negociable) — no implementada
-  porque no hay nada que mate procesos todavía.
+- Revalidación por-PID más barata: hoy `clean` re-pide el snapshot
+  completo del SO una vez por objetivo. Con pocos huérfanos es
+  irrelevante, pero una consulta a un solo PID sería más eficiente.
