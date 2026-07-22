@@ -6,13 +6,13 @@ import { clean, printCleanReport } from './commands/clean.js';
 function printHelp() {
   console.log(
     [
-      'mcp-zombie-guard (mzg) — detecta y limpia procesos huerfanos de',
-      'herramientas de codificacion con IA (Claude Code, Cursor, Codex,',
-      'Aider, Gemini CLI): servidores MCP, sub-agentes y navegadores que',
-      'siguen vivos con su proceso padre ya muerto.',
+      'mcp-reap — detecta y limpia procesos huerfanos de herramientas de',
+      'codificacion con IA (Claude Code, Cursor, Codex, Aider, Gemini CLI):',
+      'servidores MCP, sub-agentes y navegadores que siguen vivos con su',
+      'proceso padre ya muerto.',
       '',
       'Uso:',
-      '  mzg <comando> [opciones]',
+      '  mcp-reap <comando> [opciones]        (alias corto: mzg)',
       '',
       'Comandos:',
       '  scan          Lista los procesos huerfanos detectados (solo lectura).',
@@ -39,7 +39,7 @@ function printHelp() {
       '  - Antes de matar revalida que el PID sigue siendo el mismo proceso.',
       '  - SIGTERM primero; SIGKILL solo si no responde a tiempo.',
       '  - Los procesos que coincidan con la lista blanca (~/.mzg/config.json)',
-      '    nunca se matan. Crea el fichero con "mzg init".',
+      '    nunca se matan. Crea el fichero con "mcp-reap init".',
     ].join('\n'),
   );
 }

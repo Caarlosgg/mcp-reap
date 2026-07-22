@@ -1,9 +1,10 @@
 {
-  "name": "mcp-zombie-guard",
+  "name": "mcp-reap",
   "version": "0.1.0",
   "description": "Detecta y limpia procesos huerfanos dejados por herramientas de codificacion con IA (Claude Code, Cursor, Codex, Aider, Gemini CLI).",
   "type": "module",
   "bin": {
+    "mcp-reap": "./src/cli.js",
     "mzg": "./src/cli.js"
   },
   "scripts": {

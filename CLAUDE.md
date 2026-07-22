@@ -1,10 +1,13 @@
-# mcp-zombie-guard
+# mcp-reap
 
 ## Qué es
 CLI en Node.js que detecta y limpia procesos huérfanos dejados por
 herramientas de codificación con IA (Claude Code, Cursor, Codex, Aider,
 Gemini CLI). Referencia de diseño: zclean (github.com/TheStack-ai/zclean),
 pero diferenciado por soporte multi-máquina/equipo, que zclean no cubre.
+Se publica como paquete `mcp-reap`; el binario principal es `mcp-reap`,
+con `mzg` como alias corto. El namespace de config/estado sigue siendo
+`~/.mzg/` (ligado al alias corto).
 
 ## Reglas no negociables
 - Dry-run por defecto siempre. Nunca matar un proceso sin --yes explícito.

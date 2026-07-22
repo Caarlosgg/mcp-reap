@@ -11,7 +11,7 @@ import { defaultConfigPath } from '../lib/whitelist.js';
 // te deja el fichero listo para editar.
 const TEMPLATE = {
   _ayuda:
-    'Patrones (regex, sin distinguir mayus/minus) comparados contra "nombre + linea de comandos" de cada proceso. Los que coincidan NUNCA se mataran con "mzg clean".',
+    'Patrones (regex, sin distinguir mayus/minus) comparados contra "nombre + linea de comandos" de cada proceso. Los que coincidan NUNCA se mataran con "mcp-reap clean".',
   _ejemplos: ['postgres', 'com\\.docker', 'mi-servidor-critico'],
   whitelist: [],
 };
@@ -45,7 +45,7 @@ export function init({ configPath = defaultConfigPath(), log = console.log } = {
       'Config creado en:',
       `  ${configPath}`,
       '',
-      'Contiene una lista blanca vacia. Para proteger procesos de "mzg clean",',
+      'Contiene una lista blanca vacia. Para proteger procesos de "mcp-reap clean",',
       'anade patrones al array "whitelist", por ejemplo:',
       '',
       '  "whitelist": ["postgres", "mi-servidor-critico"]',
