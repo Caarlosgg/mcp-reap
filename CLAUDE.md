@@ -82,10 +82,23 @@ Hecho:
   `configPath`/`log` inyectables para testear sin tocar `~/.mzg` real.
   3 tests en `test/init.test.js`.
 
-Nota Windows: `process.kill(pid, 'SIGTERM')` no es una terminación suave
-real (llama a TerminateProcess como SIGKILL). La escalada se mantiene
-igual porque en Unix sí importa; en Windows el proceso ya habrá muerto
-tras el primer intento y la espera termina de inmediato.
+Terminación por plataforma (`src/lib/reaper.js`, control real):
+- Unix (mac/Linux): `process.kill` con SIGTERM→espera→SIGKILL reales.
+- Windows: `process.kill(pid,'SIGTERM')` NO es suave ahí (Node llama a
+  TerminateProcess, kill forzado igual que SIGKILL), así que la escalada
+  no existiría. Usamos `taskkill` (nativo, cero deps): `'SIGTERM'` →
+  `taskkill /PID <pid>` (cierre ordenado), espera el timeout, y `'SIGKILL'`
+  → `taskkill /PID <pid> /F` (forzado). La interfaz `control.kill(pid,
+  signal)` es idéntica en ambos SO, así que `reap`/`clean` no saben en qué
+  plataforma corren. `makeWindowsKill({run, isAlive})` tiene el `run` de
+  taskkill inyectable para testear sin ejecutarlo. Verificado a mano en
+  Windows real matando un `node` propio: el cierre suave no se entrega a
+  un proceso de consola sin ventana → escala a `/F` y lo mata.
+  Límite: si un proceso ignora el cierre ordenado (no procesa WM_CLOSE),
+  el paso suave no hace nada y siempre acabamos en `/F` — es correcto,
+  pero pierde la ventaja de dejar limpiar recursos (ver explicación al
+  usuario). Tests en `test/reaper.windows.test.js` (8, con taskkill
+  simulado).
 
 Limitación conocida (documentar antes de tocarla): la columna "tiempo
 activo" es el tiempo que el proceso lleva corriendo, NO el tiempo que
