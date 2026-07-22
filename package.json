@@ -7,13 +7,43 @@
     "mcp-reap": "./src/cli.js",
     "mzg": "./src/cli.js"
   },
+  "files": [
+    "src"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "build": "node scripts/build.mjs",
     "test": "node --test test/*.test.js",
     "scan": "node src/cli.js scan"
   },
-  "engines": {
-    "node": ">=18"
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "claude-code",
+    "cursor",
+    "codex",
+    "aider",
+    "gemini-cli",
+    "orphan",
+    "orphan-process",
+    "zombie",
+    "reaper",
+    "process",
+    "process-management",
+    "cleanup",
+    "cli",
+    "devtools"
+  ],
+  "author": "Carlos Gallardo González <gallaigonz@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Caarlosgg/mcp-reap.git"
   },
-  "license": "MIT"
+  "bugs": {
+    "url": "https://github.com/Caarlosgg/mcp-reap/issues"
+  },
+  "homepage": "https://github.com/Caarlosgg/mcp-reap#readme"
 }

@@ -111,7 +111,23 @@ necesita un dato de "huérfano desde hace X" preciso, hace falta guardar
 estado entre ejecuciones (ej. `~/.mzg/state.json` con primer-visto por
 PID).
 
+Pre-publicación (hecho en auditoría):
+- `package.json` completo: name, version, description, bin (mcp-reap +
+  mzg), `files: ["src"]` (solo se publica src/; npm añade LICENSE y
+  package.json solos), engines node>=18, keywords, author, license MIT,
+  repository/bugs/homepage a github.com/Caarlosgg/mcp-reap.
+- `LICENSE` MIT (2026 Carlos Gallardo González).
+- `npm pack --dry-run`: 18 ficheros, sin tests/CLAUDE.md/scripts.
+- Binario verificado con `npm link`: `mcp-reap`/`mzg` arrancan como
+  comando real (shebang OK) para --help/--version/scan.
+- Código limpio: sin TODOs reales, sin rutas absolutas en lógica (el
+  `/home/demo/...` es dato simulado), sin console.log de depuración.
+
 Falta:
+- README (pendiente, tarea aparte) — npm avisa de su ausencia; no bloquea
+  publicar pero conviene antes de `npm publish`.
+- Publicar de verdad (`npm publish` / crear repo en GitHub) — no hecho a
+  propósito. Antes: crear el repo remoto y `git push`.
 - No hay flag CLI ni comando para editar/inspeccionar la whitelist; se
   edita `~/.mzg/config.json` a mano.
 - Soporte multi-máquina/equipo (el diferenciador vs. zclean) — sin
