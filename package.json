@@ -4,8 +4,8 @@
   "description": "Detecta y limpia procesos huerfanos dejados por herramientas de codificacion con IA (Claude Code, Cursor, Codex, Aider, Gemini CLI).",
   "type": "module",
   "bin": {
-    "mcp-reap": "./src/cli.js",
-    "mzg": "./src/cli.js"
+    "mcp-reap": "src/cli.js",
+    "mzg": "src/cli.js"
   },
   "files": [
     "src"
@@ -16,7 +16,8 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "test": "node --test test/*.test.js",
-    "scan": "node src/cli.js scan"
+    "scan": "node src/cli.js scan",
+    "prepublishOnly": "npm run build && npm test"
   },
   "keywords": [
     "mcp",
