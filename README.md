@@ -1,91 +1,119 @@
 # mcp-reap
 
-**Detecta y limpia los procesos huérfanos que dejan las herramientas de codificación con IA.** Funciona en Windows, macOS y Linux, y con Claude Code, Cursor, Codex, Aider y Gemini CLI — no solo con una.
-
-```bash
-npx mcp-reap scan     # lista los procesos huérfanos (solo lectura)
-npx mcp-reap clean    # muestra qué mataría (dry-run por defecto)
-npx mcp-reap clean --yes   # los mata de verdad
-```
-
----
+CLI para Node.js que detecta y limpia procesos huérfanos dejados por
+herramientas de codificación con IA: **Claude Code, Cursor, Codex, Aider y
+Gemini CLI**. Funciona en Windows, macOS y Linux.
 
 ## El problema
 
-Las herramientas de codificación con IA lanzan servidores MCP y subagentes como procesos hijos. Cuando la sesión termina —sobre todo si termina mal: cierras la terminal, se cuelga, el sistema entra en suspensión— esos hijos no reciben la señal de cierre y quedan **huérfanos**: siguen vivos, consumiendo memoria, sin nada que los limpie.
+Estas herramientas lanzan servidores MCP y subagentes como procesos hijos.
+Cuando la sesión termina mal —cierras la terminal, el proceso padre cuelga,
+el sistema entra en suspensión— esos hijos no reciben la señal de cierre y
+quedan huérfanos: siguen vivos, consumiendo memoria y CPU, sin nada que los
+limpie. Con el tiempo se acumulan y hay que ir matándolos a mano, con el
+riesgo de matar por error un proceso legítimo que no tiene nada que ver.
 
-No es un caso raro. Es un problema documentado y abierto que afecta a mucha gente:
+## Por qué existe
 
-- Una sesión dejó **172 procesos MCP huérfanos consumiendo más de 1 GB** de RAM, cada uno de ellos ~44 MB. ([claude-code#40667](https://github.com/anthropics/claude-code/issues/40667))
-- Un caso más extremo: **12 sesiones acumularon 308 procesos y 111 GB**, hasta provocar un kernel panic. ([claude-code#45880](https://github.com/anthropics/claude-code/issues/45880))
-- Servidores MCP dejando procesos de ~84 MB que se acumulan sesión tras sesión. ([context7#2542](https://github.com/upstash/context7/issues/2542))
-- El mismo patrón aparece con servidores MCP de Postgres, Lark, context7 y con subagentes — no es cosa de una sola herramienta.
+Ya existe [zclean](https://github.com/TheStack-ai/zclean) (43 estrellas,
+sin mantenimiento desde marzo) para este mismo problema, pero cubre un solo
+caso de uso: una máquina, un usuario. `mcp-reap` toma la misma idea de base
+y la diferencia en dos frentes:
 
-Estos procesos no se van solos. Hay que encontrarlos y matarlos a mano — y saber cuáles son huérfanos de verdad y cuáles no.
+- **Mantenimiento activo.** zclean lleva meses sin commits; `mcp-reap` es
+  la continuación viva de esa idea.
+- **Roadmap multi-máquina/equipo.** Detectar y limpiar huérfanos en tu
+  propia laptop es solo la mitad del problema cuando un equipo comparte
+  máquinas de desarrollo o runners de CI. Ese soporte multi-máquina es el
+  diferenciador de fondo que zclean no cubre y que `mcp-reap` tiene en su
+  hoja de ruta.
 
-## Qué hace `mcp-reap`
-
-- **Detecta** procesos huérfanos de herramientas de IA en Windows, macOS y Linux, distinguiéndolos de los procesos legítimos que siguen en uso.
-- **Limpia** solo los que has confirmado, con salvaguardas pensadas para no matar nunca lo que no debe.
-
-## Seguridad primero
-
-Esta herramienta mata procesos. Está construida asumiendo que un error puede costar caro, así que:
-
-- **Dry-run por defecto.** `clean` sin `--yes` solo te muestra qué haría. Nada muere sin que lo confirmes.
-- **Revalidación anti-PID-reciclado.** Justo antes de matar, vuelve a comprobar que el PID sigue siendo *el mismo* proceso huérfano que detectó — comparando su marca de tiempo de arranque, no solo que el número exista. Los sistemas reciclan los PIDs: sin esta comprobación, podrías matar un proceso nuevo y legítimo que heredó el número de uno que ya murió. Esta es la salvaguarda más importante de todas.
-- **Lista blanca configurable.** Protege los procesos que quieras, aunque coincidan con una firma conocida. Un config corrupto o un patrón mal escrito nunca tumban la herramienta ni desprotegen en silencio: se avisa y se sigue de forma segura.
-- **Terminación con gracia.** Pide primero un cierre ordenado (SIGTERM en Unix, `taskkill` en Windows), espera, y solo fuerza (SIGKILL / `taskkill /F`) si el proceso no responde a tiempo.
-- **Registro de auditoría.** Cada proceso que se mata queda registrado.
-- **Cero dependencias.** Usa solo lo que trae cada sistema operativo. Menos superficie de ataque, nada que instalar de terceros.
+Aparte de eso, `mcp-reap` reconoce más herramientas (no solo Claude Code) y
+funciona también en Windows.
 
 ## Instalación
 
 ```bash
-# Uso puntual, sin instalar
-npx mcp-reap scan
-
 # Instalación global
 npm install -g mcp-reap
-mcp-reap scan
+
+# O sin instalar nada, al vuelo
+npx mcp-reap scan
 ```
+
+El binario se instala como `mcp-reap`, con `mzg` como alias corto.
 
 ## Uso
 
+### `scan` — solo detecta, no toca nada
+
 ```bash
-mcp-reap scan                    # lista huérfanos detectados
-mcp-reap scan --json             # lo mismo, en JSON
-
-mcp-reap clean                   # dry-run: muestra qué mataría
-mcp-reap clean --yes             # mata de verdad
-mcp-reap clean --yes --timeout=5 # espera 5s tras el cierre suave antes de forzar
-
-mcp-reap init                    # crea ~/.mzg/config.json para tu lista blanca
+mcp-reap scan          # tabla legible
+mcp-reap scan --json   # mismo resultado en JSON
 ```
 
-### Proteger procesos (lista blanca)
+Lista los procesos huérfanos detectados: PID, herramienta a la que
+pertenecen (o "servidor MCP no identificado" si no coincide con ninguna
+firma conocida), y por qué se consideran huérfanos (padre ausente, ppid
+reparentado a init, o PID de padre reciclado por un proceso más nuevo).
+`scan` es de solo lectura siempre — nunca mata nada.
 
-`mcp-reap init` crea un fichero de config donde puedes añadir patrones. Cualquier proceso cuyo nombre o línea de comandos coincida con un patrón **nunca** se matará:
+### `clean` — limpia, con dry-run por defecto
 
-```json
-{
-  "whitelist": ["postgres", "com\\.docker", "mi-servidor-critico"]
-}
+```bash
+mcp-reap clean                    # dry-run: solo muestra qué mataría
+mcp-reap clean --yes              # mata de verdad los huérfanos detectados
+mcp-reap clean --yes --timeout=5  # espera 5s tras SIGTERM antes de forzar SIGKILL
 ```
 
-## Comparación honesta con otras herramientas
+**`clean` sin `--yes` nunca mata ningún proceso** — solo imprime lo que
+haría, igual que `scan` pero con la acción propuesta. Necesitas pasar
+`--yes` explícitamente para que mate algo de verdad. Cuando lo hace:
 
-Si trabajas **solo con Claude Code, en macOS o Linux**, y quieres limpieza automática enganchada a tu shell, [`cc-reaper`](https://github.com/theQuert/cc-reaper) es una herramienta más completa para ese caso — merece la pena mirarla.
+1. Revalida justo antes de actuar que el PID sigue siendo el mismo proceso
+   huérfano detectado (compara su timestamp de arranque), para no matar un
+   PID reciclado por un proceso nuevo y legítimo.
+2. Envía SIGTERM (o `taskkill` sin `/F` en Windows) y espera el timeout
+   configurado (10s por defecto).
+3. Si el proceso sigue vivo, escala a SIGKILL (`taskkill /F` en Windows).
+4. Respeta la lista blanca configurable — nunca mata un proceso que
+   coincida con un patrón en `~/.mzg/config.json`.
+5. Registra cada acción real en `~/.mzg/clean.log` (no se escribe nada en
+   dry-run).
 
-`mcp-reap` es para ti si:
+### Lista blanca
 
-- Trabajas en **Windows** (las alternativas actuales solo cubren macOS/Linux).
-- Usas **más de una herramienta de IA** (Cursor, Codex, Aider, Gemini CLI), no solo Claude Code.
-- Prefieres una herramienta que **no se engancha a tu sistema** — un `npx` puntual cuando lo necesitas, sin hooks ni instaladores que modifiquen tu shell.
+```bash
+mcp-reap init   # crea ~/.mzg/config.json con una plantilla vacía
+```
 
-## Estado
+Edita el campo `whitelist` (array de patrones/regex) para proteger
+procesos concretos aunque coincidan con una firma conocida de herramienta
+de IA.
 
-Primera versión pública. El núcleo (detección, limpieza segura, lista blanca, soporte multiplataforma) está cubierto por tests y verificado a mano en Windows. Los informes de fallos y las ideas son bienvenidos — abre un issue.
+### Modo `--demo`
+
+```bash
+mcp-reap scan --demo
+mcp-reap clean --demo
+mcp-reap clean --demo --yes
+```
+
+Corre la misma lógica de detección y limpieza sobre un snapshot de
+procesos simulado en vez de los procesos reales de tu sistema. Es útil
+para ver cómo se comporta la herramienta (incluida la escalada a SIGKILL)
+sin ningún riesgo: en modo demo nunca se llama a `process.kill` real, así
+que ningún proceso de tu máquina puede resultar afectado.
+
+## Seguridad
+
+- Dry-run por defecto siempre en `clean`; solo `--yes` mata procesos.
+- Verificación de que el proceso padre está realmente muerto antes de
+  considerar huérfano a un proceso.
+- Revalidación anti-PID-reciclado justo antes de matar.
+- SIGTERM primero, espera configurable, SIGKILL solo si no responde.
+- Lista blanca configurable para excluir procesos concretos.
+- Cero dependencias externas (solo Node.js nativo).
 
 ## Licencia
 
