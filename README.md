@@ -118,13 +118,6 @@ que ningún proceso de tu máquina puede resultar afectado.
 - Lista blanca configurable para excluir procesos concretos.
 - Cero dependencias externas (solo Node.js nativo).
 
-## Alternativas
-
-Si solo usas Claude Code en macOS o Linux, [cc-reaper](https://github.com/theQuert/cc-reaper) es otra opción:
-cubre únicamente esa herramienta en esas dos plataformas, pero ofrece más
-automatización en segundo plano (daemon + hook de `Stop`) para quien no
-necesite nada más que eso.
-
 ## Licencia
 
 MIT
