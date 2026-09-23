@@ -11,8 +11,8 @@ import { defaultConfigPath } from '../lib/whitelist.js';
 // te deja el fichero listo para editar.
 const TEMPLATE = {
   _ayuda:
-    'Patrones (regex, sin distinguir mayus/minus) comparados contra "nombre + linea de comandos" de cada proceso. Los que coincidan NUNCA se mataran con "mcp-reap clean".',
-  _ejemplos: ['postgres', 'com\\.docker', 'mi-servidor-critico'],
+    'Patterns (regex, case-insensitive) matched against "name + command line" of each process. Matches are NEVER killed by "mcp-reap clean".',
+  _ejemplos: ['postgres', 'com\\.docker', 'my-critical-server'],
   whitelist: [],
 };
 
@@ -27,11 +27,11 @@ export function init({ configPath = defaultConfigPath(), log = console.log } = {
   if (existsSync(configPath)) {
     log(
       [
-        'Ya existe un config en:',
+        'A config already exists at:',
         `  ${configPath}`,
         '',
-        'No se ha tocado (init nunca sobrescribe uno existente).',
-        'Editalo a mano y anade patrones al array "whitelist".',
+        'It was not touched (init never overwrites an existing one).',
+        'Edit it by hand and add patterns to the "whitelist" array.',
       ].join('\n'),
     );
     return { created: false, configPath };
@@ -42,16 +42,16 @@ export function init({ configPath = defaultConfigPath(), log = console.log } = {
 
   log(
     [
-      'Config creado en:',
+      'Config created at:',
       `  ${configPath}`,
       '',
-      'Contiene una lista blanca vacia. Para proteger procesos de "mcp-reap clean",',
-      'anade patrones al array "whitelist", por ejemplo:',
+      'It contains an empty whitelist. To protect processes from "mcp-reap clean",',
+      'add patterns to the "whitelist" array, for example:',
       '',
-      '  "whitelist": ["postgres", "mi-servidor-critico"]',
+      '  "whitelist": ["postgres", "my-critical-server"]',
       '',
-      'Cada patron es una regex (sin distinguir mayus/minus) que se compara',
-      'contra el nombre y la linea de comandos de cada proceso.',
+      'Each pattern is a case-insensitive regex matched against the name',
+      'and command line of each process.',
     ].join('\n'),
   );
   return { created: true, configPath };

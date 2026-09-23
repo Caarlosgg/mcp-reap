@@ -6,40 +6,40 @@ import { clean, printCleanReport } from './commands/clean.js';
 function printHelp() {
   console.log(
     [
-      'mcp-reap — detecta y limpia procesos huerfanos de herramientas de',
-      'codificacion con IA (Claude Code, Cursor, Codex, Aider, Gemini CLI):',
-      'servidores MCP, sub-agentes y navegadores que siguen vivos con su',
-      'proceso padre ya muerto.',
+      'mcp-reap — detects and cleans up orphaned processes from AI coding',
+      'tools (Claude Code, Cursor, Codex, Aider, Gemini CLI): MCP servers,',
+      'sub-agents, and browsers still alive with their parent process',
+      'already dead.',
       '',
-      'Uso:',
-      '  mcp-reap <comando> [opciones]        (alias corto: mzg)',
+      'Usage:',
+      '  mcp-reap <command> [options]        (short alias: mzg)',
       '',
-      'Comandos:',
-      '  scan          Lista los procesos huerfanos detectados (solo lectura).',
-      '  clean         Mata los procesos huerfanos detectados.',
-      '                DRY-RUN POR DEFECTO: sin --yes solo muestra que',
-      '                mataria, no toca ningun proceso.',
-      '  init          Crea ~/.mzg/config.json con una plantilla de lista blanca.',
+      'Commands:',
+      '  scan          Lists the orphaned processes detected (read-only).',
+      '  clean         Kills the orphaned processes detected.',
+      '                DRY-RUN BY DEFAULT: without --yes it only shows what',
+      "                it would kill, it never touches any process.",
+      '  init          Creates ~/.mzg/config.json with a whitelist template.',
       '',
-      'Opciones de scan:',
-      '  --json        Salida en JSON en vez de tabla.',
+      'scan options:',
+      '  --json        JSON output instead of a table.',
       '',
-      'Opciones de clean:',
-      '  --yes         Mata de verdad. Sin este flag, clean es dry-run.',
-      '  --timeout=<s> Segundos a esperar tras SIGTERM antes de mandar SIGKILL',
-      '                (por defecto 10).',
-      '  --json        Salida en JSON en vez de tabla.',
+      'clean options:',
+      '  --yes         Actually kill processes. Without this flag, clean is dry-run.',
+      '  --timeout=<s> Seconds to wait after SIGTERM before sending SIGKILL',
+      '                (default 10).',
+      '  --json        JSON output instead of a table.',
       '',
-      'Opciones generales:',
-      '  -h, --help    Muestra esta ayuda.',
-      '  -v, --version Muestra la version.',
+      'General options:',
+      '  -h, --help    Show this help.',
+      '  -v, --version Show the version.',
       '',
-      'Seguridad:',
-      '  - clean NUNCA mata sin --yes (dry-run por defecto).',
-      '  - Antes de matar revalida que el PID sigue siendo el mismo proceso.',
-      '  - SIGTERM primero; SIGKILL solo si no responde a tiempo.',
-      '  - Los procesos que coincidan con la lista blanca (~/.mzg/config.json)',
-      '    nunca se matan. Crea el fichero con "mcp-reap init".',
+      'Security:',
+      '  - clean NEVER kills without --yes (dry-run by default).',
+      "  - Before killing, it revalidates that the PID is still the same process.",
+      "  - SIGTERM first; SIGKILL only if it doesn't respond in time.",
+      '  - Processes matching the whitelist (~/.mzg/config.json) are never',
+      '    killed. Create the file with "mcp-reap init".',
     ].join('\n'),
   );
 }
@@ -84,7 +84,7 @@ async function main(argv) {
       processSource = () => buildDemoSnapshot();
       // Al stderr y no al stdout: para que `--demo --json` siga
       // produciendo stdout parseable, sin mezclar el aviso con los datos.
-      console.error('[DEMO] Datos simulados, no se escaneo el sistema real.\n');
+      console.error('[DEMO] Simulated data, the real system was not scanned.\n');
     }
 
     const results = await scan({ processSource });
@@ -114,7 +114,7 @@ async function main(argv) {
       options.processSource = world.processSource;
       options.control = world.control;
       options.logger = createMemoryLogger();
-      console.error('[DEMO] Datos simulados; NO se toca ningun proceso real.\n');
+      console.error('[DEMO] Simulated data; NO real process is touched.\n');
     } else {
       // Camino real: la lista blanca sale de ~/.mzg/config.json (o vacia
       // si no existe / esta corrupto; loadWhitelist ya avisa por stderr).
@@ -127,12 +127,12 @@ async function main(argv) {
     return;
   }
 
-  console.error(`Comando desconocido: ${command}\n`);
+  console.error(`Unknown command: ${command}\n`);
   printHelp();
   process.exitCode = 1;
 }
 
 main(process.argv.slice(2)).catch((err) => {
-  console.error('Error inesperado:', err.message);
+  console.error('Unexpected error:', err.message);
   process.exitCode = 1;
 });

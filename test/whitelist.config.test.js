@@ -88,7 +88,7 @@ test('campo whitelist mal formado (no es array de strings): lista vacia y aviso'
     const result = loadWhitelist(path, { warn });
     assert.deepEqual(result, []);
     assert.equal(warnings.length, 1);
-    assert.match(warnings[0], /array de strings/i);
+    assert.match(warnings[0], /array of strings/i);
   });
 });
 
@@ -104,7 +104,7 @@ test('patron invalido entre validos: sobreviven los validos, se descarta el roto
     assert.deepEqual(result, ['aider', 'cursor'], 'un patron roto no debe tumbar a los demas');
     assert.equal(warnings.length, 1);
     assert.match(warnings[0], /"node\("/);
-    assert.match(warnings[0], /regex valida/i);
+    assert.match(warnings[0], /valid regex/i);
   });
 });
 
@@ -118,7 +118,7 @@ test('todos los patrones invalidos: lista vacia y un aviso por cada uno', () => 
 
     assert.deepEqual(result, []);
     assert.equal(warnings.length, 3, 'un aviso por cada patron descartado');
-    assert.ok(warnings.every((w) => /regex valida/i.test(w)));
+    assert.ok(warnings.every((w) => /valid regex/i.test(w)));
   });
 });
 

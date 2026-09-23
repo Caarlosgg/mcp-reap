@@ -42,7 +42,7 @@ export function loadWhitelist(
       // No hay config: caso normal, no es un error. Lista vacia en silencio.
       return [];
     }
-    warn(`[mzg] No se pudo leer ${configPath}: ${err.message}. Se continua sin lista blanca.`);
+    warn(`[mzg] Could not read ${configPath}: ${err.message}. Continuing without a whitelist.`);
     return [];
   }
 
@@ -51,8 +51,8 @@ export function loadWhitelist(
     parsed = JSON.parse(raw);
   } catch (err) {
     warn(
-      `[mzg] Config corrupto en ${configPath}: ${err.message}. ` +
-        'Se ignora la lista blanca (queda vacia) por seguridad; revisa el fichero.',
+      `[mzg] Invalid config at ${configPath}: ${err.message}. ` +
+        'Ignoring the whitelist (left empty) for safety; check the file.',
     );
     return [];
   }
@@ -64,8 +64,8 @@ export function loadWhitelist(
   }
   if (!Array.isArray(list) || !list.every((p) => typeof p === 'string')) {
     warn(
-      `[mzg] El campo "whitelist" de ${configPath} debe ser un array de strings. ` +
-        'Se ignora (queda vacia).',
+      `[mzg] The "whitelist" field in ${configPath} must be an array of strings. ` +
+        'Ignoring it (left empty).',
     );
     return [];
   }
@@ -84,8 +84,8 @@ export function loadWhitelist(
       valid.push(pattern);
     } catch (err) {
       warn(
-        `[mzg] Patron de whitelist ignorado por no ser una regex valida: ` +
-          `${JSON.stringify(pattern)} (${err.message}). Los demas patrones siguen activos.`,
+        `[mzg] Whitelist pattern ignored for not being a valid regex: ` +
+          `${JSON.stringify(pattern)} (${err.message}). The other patterns remain active.`,
       );
     }
   }

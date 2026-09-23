@@ -54,11 +54,11 @@ export function printReport(results, { json = false } = {}) {
   }
 
   if (results.length === 0) {
-    console.log('No se encontraron procesos huerfanos de herramientas de IA conocidas.');
+    console.log('No orphaned processes from known AI tools were found.');
     return;
   }
 
-  const headers = ['PID', 'HERRAMIENTA', 'NOMBRE', 'MEMORIA', 'TIEMPO ACTIVO', 'COMANDO'];
+  const headers = ['PID', 'TOOL', 'NAME', 'MEMORY', 'UPTIME', 'COMMAND'];
   const rows = results.map((r) => [
     String(r.pid),
     r.toolLabel,
@@ -80,7 +80,7 @@ export function printReport(results, { json = false } = {}) {
   for (const row of rows) printRow(row);
 
   console.log(
-    `\n${results.length} proceso(s) huerfano(s) encontrado(s). ` +
-      'Ejecutado en modo solo-lectura: no se mato ni modifico ningun proceso.',
+    `\n${results.length} orphaned process(es) found. ` +
+      'Ran in read-only mode: no process was killed or modified.',
   );
 }

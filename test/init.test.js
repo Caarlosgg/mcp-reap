@@ -61,6 +61,6 @@ test('nunca sobrescribe un config existente', () => {
     assert.equal(result.created, false);
     const parsed = JSON.parse(readFileSync(configPath, 'utf8'));
     assert.deepEqual(parsed.whitelist, ['postgres'], 'no debe tocar el contenido existente');
-    assert.match(lines.join('\n'), /existe|no se ha tocado/i);
+    assert.match(lines.join('\n'), /already exists|not touched/i);
   });
 });

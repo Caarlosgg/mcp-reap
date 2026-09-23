@@ -110,40 +110,40 @@ export function printCleanReport(outcome, { json = false } = {}) {
 
   if (dryRun) {
     if (killTargets.length === 0) {
-      console.log('No hay procesos huerfanos que limpiar.');
+      console.log('No orphaned processes to clean up.');
     } else {
-      console.log('DRY-RUN: no se matara nada. Ejecuta con --yes para hacerlo.\n');
+      console.log('DRY-RUN: nothing will be killed. Run with --yes to do it.\n');
       console.log(
         renderTable(
-          ['PID', 'HERRAMIENTA', 'NOMBRE', 'MEMORIA', 'TIEMPO ACTIVO', 'COMANDO'],
+          ['PID', 'TOOL', 'NAME', 'MEMORY', 'UPTIME', 'COMMAND'],
           killTargets.map(targetRow),
         ),
       );
-      console.log(`\n${killTargets.length} proceso(s) se matarian con --yes.`);
+      console.log(`\n${killTargets.length} process(es) would be killed with --yes.`);
     }
     if (whitelisted.length > 0) {
-      console.log(`${whitelisted.length} protegido(s) por lista blanca (no se tocarian).`);
+      console.log(`${whitelisted.length} protected by the whitelist (would not be touched).`);
     }
     return;
   }
 
   if (results.length === 0) {
-    console.log('No hubo procesos huerfanos que limpiar.');
+    console.log('There were no orphaned processes to clean up.');
     if (whitelisted.length > 0) {
-      console.log(`${whitelisted.length} protegido(s) por lista blanca.`);
+      console.log(`${whitelisted.length} protected by the whitelist.`);
     }
     return;
   }
 
   const statusText = (r) => {
-    if (r.status === 'muerto') return `muerto (${r.finalSignal})`;
-    if (r.status === 'omitido') return `omitido: ${r.reason}`;
-    return 'FALLO (sigue vivo)';
+    if (r.status === 'muerto') return `killed (${r.finalSignal})`;
+    if (r.status === 'omitido') return `skipped: ${r.reason}`;
+    return 'FAILED (still alive)';
   };
 
   console.log(
     renderTable(
-      ['PID', 'HERRAMIENTA', 'NOMBRE', 'TIEMPO ACTIVO', 'RESULTADO'],
+      ['PID', 'TOOL', 'NAME', 'UPTIME', 'RESULT'],
       results.map((r) => [
         String(r.target.pid),
         r.target.toolLabel,
@@ -159,8 +159,8 @@ export function printCleanReport(outcome, { json = false } = {}) {
   const failed = results.filter((r) => r.status === 'fallo').length;
 
   console.log(
-    `\n${killed} muerto(s), ${skipped} omitido(s), ${failed} fallido(s).` +
-      (whitelisted.length > 0 ? ` ${whitelisted.length} protegido(s) por lista blanca.` : ''),
+    `\n${killed} killed, ${skipped} skipped, ${failed} failed.` +
+      (whitelisted.length > 0 ? ` ${whitelisted.length} protected by the whitelist.` : ''),
   );
   if (outcome.logPath) {
     console.log(`Log: ${outcome.logPath}`);
