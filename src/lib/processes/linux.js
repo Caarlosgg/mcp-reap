@@ -50,18 +50,38 @@ function readCmdline(pid) {
   }
 }
 
-function readRssKB(pid) {
+function readProcStatus(pid) {
+  // VmRSS y Uid viven en el mismo fichero: una sola lectura para ambos en
+  // vez de abrir /proc/[pid]/status dos veces por proceso.
   try {
     const status = readFileSync(`/proc/${pid}/status`, 'utf8');
-    const match = status.match(/^VmRSS:\s+(\d+)\s+kB/m);
-    return match ? Number(match[1]) : null;
+    const rssMatch = status.match(/^VmRSS:\s+(\d+)\s+kB/m);
+    const uidMatch = status.match(/^Uid:\s+(\d+)/m);
+    return {
+      rssKB: rssMatch ? Number(rssMatch[1]) : null,
+      // Primer numero de la linea Uid: es el UID real (los otros tres son
+      // efectivo/guardado/fs), el que nos interesa para comparar con
+      // process.getuid().
+      uid: uidMatch ? Number(uidMatch[1]) : null,
+    };
   } catch {
-    return null;
+    return { rssKB: null, uid: null };
   }
+}
+
+// systemd --user no aparece por su ruta completa en `comm` (se trunca al
+// basename "systemd"), asi que distinguirlo del systemd de sistema (PID 1)
+// requiere mirar el argumento --user en cmdline, no solo el nombre.
+function looksLikeSystemdUserManager(name, cmd) {
+  return name === 'systemd' && /(^|\s)--user(\s|$)/.test(cmd);
 }
 
 export function listProcesses() {
   const bootTimeMs = readBootTimeMs();
+  // Solo nos interesan managers systemd --user del usuario que ejecuta
+  // mcp-reap: uno de otro usuario en la misma maquina no es "nuestro"
+  // arbol de procesos y no deberiamos tocarlo.
+  const currentUid = process.getuid();
   const pids = readdirSync('/proc').filter((entry) => /^\d+$/.test(entry));
   const records = [];
 
@@ -72,14 +92,17 @@ export function listProcesses() {
       const { name, ppid, starttimeTicks } = parseStat(rawStat);
       const startedAtMs =
         bootTimeMs != null ? bootTimeMs + (starttimeTicks / CLK_TCK) * 1000 : null;
+      const cmd = readCmdline(pid) || name;
+      const { rssKB, uid } = readProcStatus(pid);
 
       records.push({
         pid,
         ppid,
         name,
-        cmd: readCmdline(pid) || name,
-        rssKB: readRssKB(pid),
+        cmd,
+        rssKB,
         startedAtMs,
+        isSystemdUserManager: uid === currentUid && looksLikeSystemdUserManager(name, cmd),
       });
     } catch {
       // El proceso murio entre el readdir y la lectura de sus archivos:

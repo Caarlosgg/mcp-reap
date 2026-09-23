@@ -48,6 +48,41 @@ test('pid del padre reciclado por un proceso mas nuevo cuenta como huerfano', ()
   assert.equal(result.reason, 'pid del padre reciclado por otro proceso');
 });
 
+test('proceso reparentado al manager systemd --user se detecta como huerfano', () => {
+  const manager = { pid: 500, ppid: 1, startedAtMs: 500, isSystemdUserManager: true };
+  const child = { pid: 600, ppid: 500, startedAtMs: 3000 };
+  const byPid = new Map([
+    [manager.pid, manager],
+    [child.pid, child],
+  ]);
+
+  const result = evaluateOrphan(child, byPid);
+  assert.equal(result.isOrphan, true);
+  assert.equal(result.reason, 'reparentado al manager systemd --user');
+});
+
+test('el manager systemd --user nunca se reporta a si mismo como huerfano', () => {
+  // ppid: 1 (caso tipico: reparentado a init tras terminar la sesion) -
+  // sin la exencion, la regla de "reparentado a init/sistema" lo marcaria.
+  const manager = { pid: 500, ppid: 1, startedAtMs: 500, isSystemdUserManager: true };
+  const byPid = new Map([[manager.pid, manager]]);
+
+  const result = evaluateOrphan(manager, byPid);
+  assert.equal(result.isOrphan, false);
+  assert.equal(result.reason, null);
+});
+
+test('findOrphans: reporta al reparentado al manager pero nunca al manager mismo', () => {
+  const records = [
+    { pid: 500, ppid: 1, startedAtMs: 500, isSystemdUserManager: true },
+    { pid: 600, ppid: 500, startedAtMs: 3000 },
+  ];
+
+  const orphans = findOrphans(records);
+  const pids = orphans.map((o) => o.pid);
+  assert.deepEqual(pids, [600]);
+});
+
 test('findOrphans devuelve solo los procesos huerfanos con su razon', () => {
   const records = [
     { pid: 100, ppid: 1, startedAtMs: 1000 },

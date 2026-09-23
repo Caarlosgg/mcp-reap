@@ -7,18 +7,34 @@
  *   1. Su ppid no corresponde a ningun proceso vivo ("padre ausente"), o
  *   2. Su ppid es 0/1 (init/kernel en Unix; no hay padre "de usuario"
  *      real), o
- *   3. Existe un proceso con ese pid, pero empezo a correr DESPUES que el
+ *   3. Su padre es el manager systemd --user del usuario (Linux con
+ *      systemd --user: `loginctl enable-linger` u otras rutas dejan al
+ *      manager vivo despues de que termine la sesion, y reparenta a el
+ *      cualquier proceso cuyo padre original muere sin systemd de por
+ *      medio. Ese ppid es "normal" -existe y arranco antes- por lo que
+ *      las reglas 1 y 2 no lo detectan; hace falta la marca explicita
+ *      `isSystemdUserManager` puesta por lib/processes/linux.js), o
+ *   4. Existe un proceso con ese pid, pero empezo a correr DESPUES que el
  *      hijo ("padre-impostor"): el PID del padre original fue reciclado
  *      por el SO y ahora lo ocupa un proceso distinto que no tiene
  *      relacion con el hijo. Sin esta comprobacion, un huerfano real se
  *      reportaria como "sano" solo porque su ppid numerico coincide por
  *      casualidad con un proceso vivo.
  *
- * @param {{ pid: number, ppid: number, startedAtMs: number | null }} record
- * @param {Map<number, { pid: number, startedAtMs: number | null }>} byPid
+ * El propio manager systemd --user esta exento de las cuatro reglas: es
+ * habitual que su ppid sea 1 (la regla 2 lo marcaria como huerfano) o que
+ * su padre de lanzamiento ya no exista (regla 1) sin que eso signifique
+ * que deba matarse -es la sesion de usuario entera la que depende de el-.
+ *
+ * @param {{ pid: number, ppid: number, startedAtMs: number | null, isSystemdUserManager?: boolean }} record
+ * @param {Map<number, { pid: number, startedAtMs: number | null, isSystemdUserManager?: boolean }>} byPid
  * @returns {{ isOrphan: boolean, reason: string | null }}
  */
 export function evaluateOrphan(record, byPid) {
+  if (record.isSystemdUserManager) {
+    return { isOrphan: false, reason: null };
+  }
+
   if (record.ppid <= 1) {
     return { isOrphan: true, reason: 'reparentado a init/sistema' };
   }
@@ -27,6 +43,10 @@ export function evaluateOrphan(record, byPid) {
 
   if (!parent) {
     return { isOrphan: true, reason: 'padre ausente' };
+  }
+
+  if (parent.isSystemdUserManager) {
+    return { isOrphan: true, reason: 'reparentado al manager systemd --user' };
   }
 
   if (
