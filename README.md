@@ -13,23 +13,25 @@ quedan huérfanos: siguen vivos, consumiendo memoria y CPU, sin nada que los
 limpie. Con el tiempo se acumulan y hay que ir matándolos a mano, con el
 riesgo de matar por error un proceso legítimo que no tiene nada que ver.
 
-## Por qué existe
+## Qué hace mcp-reap
 
-Ya existe [zclean](https://github.com/TheStack-ai/zclean) (43 estrellas,
-sin mantenimiento desde marzo) para este mismo problema, pero cubre un solo
-caso de uso: una máquina, un usuario. `mcp-reap` toma la misma idea de base
-y la diferencia en dos frentes:
-
-- **Mantenimiento activo.** zclean lleva meses sin commits; `mcp-reap` es
-  la continuación viva de esa idea.
-- **Roadmap multi-máquina/equipo.** Detectar y limpiar huérfanos en tu
-  propia laptop es solo la mitad del problema cuando un equipo comparte
-  máquinas de desarrollo o runners de CI. Ese soporte multi-máquina es el
-  diferenciador de fondo que zclean no cubre y que `mcp-reap` tiene en su
-  hoja de ruta.
-
-Aparte de eso, `mcp-reap` reconoce más herramientas (no solo Claude Code) y
-funciona también en Windows.
+- **Soporte real en Windows, macOS y Linux** — no solo detección: también
+  limpieza, con la escalada de señales adaptada a cada sistema (SIGTERM/
+  SIGKILL en Unix, `taskkill` sin/con `/F` en Windows).
+- **Reconoce Claude Code, Cursor, Codex, Aider y Gemini CLI** por firma de
+  proceso, más un fallback genérico para servidores MCP que no coincidan
+  con ninguna herramienta conocida.
+- **Cero dependencias externas** — solo Node.js nativo (`/proc` en Linux,
+  `ps` en macOS, `Get-CimInstance Win32_Process` vía PowerShell en
+  Windows).
+- **Dry-run por defecto siempre** — `clean` nunca mata nada salvo que
+  pases `--yes` explícitamente.
+- **Revalidación de PID antes de matar** — justo antes de actuar,
+  comprueba que el PID sigue siendo el mismo proceso huérfano detectado
+  (compara su timestamp de arranque), para no matar un PID reciclado por
+  un proceso nuevo y legítimo.
+- **Lista blanca configurable** — protege procesos concretos aunque
+  coincidan con una firma de herramienta de IA.
 
 ## Instalación
 
@@ -55,7 +57,8 @@ mcp-reap scan --json   # mismo resultado en JSON
 Lista los procesos huérfanos detectados: PID, herramienta a la que
 pertenecen (o "servidor MCP no identificado" si no coincide con ninguna
 firma conocida), y por qué se consideran huérfanos (padre ausente, ppid
-reparentado a init, o PID de padre reciclado por un proceso más nuevo).
+reparentado a init, reparentado al manager systemd --user (Linux), o PID
+de padre reciclado por un proceso más nuevo).
 `scan` es de solo lectura siempre — nunca mata nada.
 
 ### `clean` — limpia, con dry-run por defecto
@@ -114,6 +117,13 @@ que ningún proceso de tu máquina puede resultar afectado.
 - SIGTERM primero, espera configurable, SIGKILL solo si no responde.
 - Lista blanca configurable para excluir procesos concretos.
 - Cero dependencias externas (solo Node.js nativo).
+
+## Alternativas
+
+Si solo usas Claude Code en macOS o Linux, [cc-reaper](https://github.com/theQuert/cc-reaper) es otra opción:
+cubre únicamente esa herramienta en esas dos plataformas, pero ofrece más
+automatización en segundo plano (daemon + hook de `Stop`) para quien no
+necesite nada más que eso.
 
 ## Licencia
 
